@@ -379,12 +379,16 @@ const HODOPHILE_DATA = {
 
     // ─── Booking Link Templates ───
     bookingLinks: {
-        flight: (origin, dest, date) =>
-            `https://www.skyscanner.net/transport/flights/${origin}/${dest}/${date}/`,
-        train: (origin, dest, date) =>
-            `https://www.thetrainline.com/book/results?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&outwardDate=${date}`,
-        accommodation: (city, checkin, checkout) =>
-            `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(city)}&checkin=${checkin}&checkout=${checkout}`
+        flight: (originCode, destCode, dateISO) =>
+            `https://www.skyscanner.net/transport/flights/${originCode.toLowerCase()}/${destCode.toLowerCase()}/${dateISO.replace(/-/g, '').slice(2)}/`,
+        train: (originCity, destCity, dateISO) =>
+            `https://www.thetrainline.com/book/results?origin=${encodeURIComponent(originCity)}&destination=${encodeURIComponent(destCity)}&outwardDate=${dateISO}T00%3A00%3A00&outwardDateType=departAfter&journeySearchType=single`,
+        accommodation: (city, checkin, checkout, opts = {}) => {
+            let url = `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(city)}&checkin=${checkin}&checkout=${checkout}`;
+            if (opts.reviewScore) url += `&review_score=${opts.reviewScore * 10}`;
+            if (opts.priceLimit) url += `&nflt=price%3DEUR-min-${opts.priceLimit}-1`;
+            return url;
+        }
     }
 };
 

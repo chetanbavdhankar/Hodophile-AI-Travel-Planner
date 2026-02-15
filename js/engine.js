@@ -31,7 +31,7 @@ class HodophileEngine {
     // MAIN OPTIMIZATION PIPELINE
     // ═══════════════════════════════════════════════════════════
     async optimize(config) {
-        const { travelers, tripDate, returnDate, duration, budget, accommodationType, preferences, targetCities } = config;
+        const { travelers, tripDate, returnDate, duration, budget, accommodationType, preferences, targetCities, reviewScore, priceLimit } = config;
 
         // Validate inputs
         const errors = this.validateInputs(config);
@@ -93,7 +93,8 @@ class HodophileEngine {
 
         const recommendations = this.routeOptimizer(
             costMatrix, neighborhoodScores, travelers,
-            tripDate, returnDate, nights, accommodationType, budget
+            tripDate, returnDate, nights, accommodationType, budget,
+            { reviewScore, priceLimit }
         );
         this.emit('stage', { stage: 'optimize', status: 'complete' });
 
@@ -148,10 +149,20 @@ class HodophileEngine {
             // Apply multi-modal rule
             const routeOptions = this.findRoutes(origin, originKey, dest, destKey, distance, traveler, tripDate);
 
-            // Filter by time constraints
+            // Filter by time constraints, max transfers, max layover
             const feasibleRoutes = routeOptions.filter(r => {
                 if (!r.feasible) return false;
-                return this.checkTimeConstraints(r, traveler);
+                if (!this.checkTimeConstraints(r, traveler)) return false;
+                // Max transfers filter
+                if (traveler.maxTransfers !== undefined && traveler.maxTransfers !== null && traveler.maxTransfers !== '') {
+                    if ((r.transfers || 0) > parseInt(traveler.maxTransfers)) return false;
+                }
+                // Max layover filter (in minutes)
+                if (traveler.maxLayover !== undefined && traveler.maxLayover !== null && traveler.maxLayover !== '') {
+                    const maxLayoverMins = parseInt(traveler.maxLayover) * 60;
+                    if (r.totalDuration > maxLayoverMins) return false;
+                }
+                return true;
             });
 
             if (feasibleRoutes.length === 0) {
@@ -181,7 +192,7 @@ class HodophileEngine {
     // ─── Find Routes (Multi-Modal) ───
     findRoutes(origin, originKey, dest, destKey, distance, traveler, tripDate) {
         const routes = [];
-        const dateStr = this.formatDateForBooking(tripDate);
+        const dateISO = tripDate; // Already YYYY-MM-DD format
 
         // Generate realistic price based on distance and randomness
         const baseFlightPrice = this.estimateFlightPrice(distance);
@@ -199,6 +210,7 @@ class HodophileEngine {
             route: `${origin.name} → ${dest.name} (✈️ Flight)`,
             routeShort: `${origin.name} → ${dest.name}`,
             mode: "flight",
+            transfers: 0,
             segments: [{
                 type: "flight",
                 from: origin.name,
@@ -207,7 +219,7 @@ class HodophileEngine {
                 duration: flightDuration,
                 airport: origin.airports[0],
                 bookingLink: this.data.bookingLinks.flight(
-                    origin.airports[0], dest.airports[0], dateStr
+                    origin.airports[0], dest.airports[0], dateISO
                 )
             }],
             totalCost: directFlightCost,
@@ -215,7 +227,7 @@ class HodophileEngine {
             arrivalTime: flightArrival,
             feasible: true,
             bookingLink: this.data.bookingLinks.flight(
-                origin.airports[0], dest.airports[0], dateStr
+                origin.airports[0], dest.airports[0], dateISO
             )
         });
 
@@ -231,6 +243,7 @@ class HodophileEngine {
                 route: `${origin.name} → ${dest.name} (🚄 Train)`,
                 routeShort: `${origin.name} → ${dest.name}`,
                 mode: "train",
+                transfers: 0,
                 segments: [{
                     type: "train",
                     from: origin.name,
@@ -238,7 +251,7 @@ class HodophileEngine {
                     cost: baseTrainPrice,
                     duration: trainDuration,
                     bookingLink: this.data.bookingLinks.train(
-                        origin.name, dest.name, tripDate
+                        origin.name, dest.name, dateISO
                     )
                 }],
                 totalCost: baseTrainPrice,
@@ -246,7 +259,7 @@ class HodophileEngine {
                 arrivalTime: trainArrival,
                 feasible: true,
                 bookingLink: this.data.bookingLinks.train(
-                    origin.name, dest.name, tripDate
+                    origin.name, dest.name, dateISO
                 )
             });
         }
@@ -267,6 +280,7 @@ class HodophileEngine {
                 route: `${origin.name} → ${gw.city} (✈️) → ${dest.name} (🚄 Train)`,
                 routeShort: `${origin.name} → ${gw.city} → ${dest.name}`,
                 mode: "multi-modal",
+                transfers: 1,
                 segments: [
                     {
                         type: "flight",
@@ -276,7 +290,7 @@ class HodophileEngine {
                         duration: gwFlightDuration,
                         airport: gw.airport,
                         bookingLink: this.data.bookingLinks.flight(
-                            origin.airports[0], gw.airport, dateStr
+                            origin.airports[0], gw.airport, dateISO
                         )
                     },
                     {
@@ -286,7 +300,7 @@ class HodophileEngine {
                         cost: gw.trainCost,
                         duration: gw.trainTime,
                         bookingLink: this.data.bookingLinks.train(
-                            gw.city, dest.name, tripDate
+                            gw.city, dest.name, dateISO
                         )
                     }
                 ],
@@ -295,7 +309,7 @@ class HodophileEngine {
                 arrivalTime: gwArrival,
                 feasible: true,
                 bookingLink: this.data.bookingLinks.flight(
-                    origin.airports[0], gw.airport, dateStr
+                    origin.airports[0], gw.airport, dateISO
                 )
             });
         }
@@ -417,7 +431,7 @@ class HodophileEngine {
     // AGENT 4: ROUTE OPTIMIZER
     // Combines all data and produces final ranked recommendations
     // ═══════════════════════════════════════════════════════════
-    routeOptimizer(costMatrix, neighborhoodScores, travelers, tripDate, returnDate, nights, accommodationType, budget) {
+    routeOptimizer(costMatrix, neighborhoodScores, travelers, tripDate, returnDate, nights, accommodationType, budget, extraOpts = {}) {
         const recommendations = [];
 
         for (const [destKey, costData] of Object.entries(costMatrix)) {
@@ -441,13 +455,14 @@ class HodophileEngine {
 
             const score = Math.round(Math.min(rawScore, 10) * 10) / 10;
 
-            // Build booking links
-            const dateStr = this.formatDateForBooking(tripDate);
-            const returnStr = this.formatDateForBooking(returnDate);
+            // Build booking links using the SPECIFIC window dates (not the flexible range)
+            const windowStart = costData.window ? costData.window.start : tripDate;
+            const windowEnd = costData.window ? costData.window.end : returnDate;
             const accommodationLink = this.data.bookingLinks.accommodation(
                 this.data.cities[destKey].name,
-                tripDate,
-                returnDate
+                windowStart,
+                windowEnd,
+                { reviewScore: extraOpts.reviewScore, priceLimit: extraOpts.priceLimit }
             );
 
             recommendations.push({
@@ -668,13 +683,13 @@ class HodophileEngine {
     }
 
     formatDateForBooking(dateStr) {
-        // Convert YYYY-MM-DD to YYMMDD for Skyscanner
+        // Return ISO YYYY-MM-DD format for booking links
         if (!dateStr) return '';
         const d = new Date(dateStr);
-        const yy = String(d.getFullYear()).slice(2);
+        const yyyy = d.getFullYear();
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         const dd = String(d.getDate()).padStart(2, '0');
-        return `${yy}${mm}${dd}`;
+        return `${yyyy}-${mm}-${dd}`;
     }
 
     simulateDelay(ms) {

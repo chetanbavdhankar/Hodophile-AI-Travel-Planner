@@ -40,6 +40,8 @@ class HodophileUI {
             citySearchInput: document.getElementById('city-search-input'),
             btnAddCustomCity: document.getElementById('btn-add-custom-city'),
             tripDuration: document.getElementById('trip-duration'),
+            reviewScore: document.getElementById('review-score'),
+            priceLimit: document.getElementById('price-limit'),
         };
     }
 
@@ -108,6 +110,8 @@ class HodophileUI {
             departureTime: data?.departureTime || '08:00',
             noTravelBefore: data?.noTravelBefore || '',
             arriveBy: data?.arriveBy || '',
+            maxTransfers: data?.maxTransfers ?? '',
+            maxLayover: data?.maxLayover ?? '',
             color
         };
         this.travelers.push(traveler);
@@ -174,6 +178,14 @@ class HodophileUI {
                 <div class="form-group">
                     <label>Arrive By</label>
                     <input type="time" class="form-input form-input-sm" data-id="${traveler.id}" data-field="arriveBy" value="${traveler.arriveBy}">
+                </div>
+                <div class="form-group">
+                    <label>Max Transfers</label>
+                    <input type="number" class="form-input form-input-sm" data-id="${traveler.id}" data-field="maxTransfers" value="${traveler.maxTransfers}" placeholder="Any" min="0" max="3">
+                </div>
+                <div class="form-group">
+                    <label>Max Travel (hrs)</label>
+                    <input type="number" class="form-input form-input-sm" data-id="${traveler.id}" data-field="maxLayover" value="${traveler.maxLayover}" placeholder="Any" min="1" max="24">
                 </div>
             </div>
             <datalist id="cities-list">
@@ -283,7 +295,9 @@ class HodophileUI {
                 origin: t.origin,
                 departureTime: t.departureTime || '08:00',
                 noTravelBefore: t.noTravelBefore || null,
-                arriveBy: t.arriveBy || null
+                arriveBy: t.arriveBy || null,
+                maxTransfers: t.maxTransfers !== '' ? t.maxTransfers : null,
+                maxLayover: t.maxLayover !== '' ? t.maxLayover : null
             })),
             tripDate: this.el.tripDateStart.value,
             returnDate: this.el.tripDateEnd.value,
@@ -291,7 +305,9 @@ class HodophileUI {
             budget: this.el.budgetMax.value ? parseInt(this.el.budgetMax.value) : null,
             accommodationType: this.el.accommodationType.value,
             preferences: this.activePreferences,
-            targetCities: this.selectedCities
+            targetCities: this.selectedCities,
+            reviewScore: this.el.reviewScore && this.el.reviewScore.value ? parseFloat(this.el.reviewScore.value) : null,
+            priceLimit: this.el.priceLimit && this.el.priceLimit.value ? parseInt(this.el.priceLimit.value) : null
         };
 
         // Show loading
@@ -519,6 +535,17 @@ class HodophileUI {
         const durationMins = traveler.duration % 60;
         const durationStr = traveler.duration === 0 ? 'Local' : `${durationHours}h ${durationMins}m`;
 
+        // Build multi-modal price breakdown
+        let costDisplay = `€${traveler.cost}`;
+        let segmentBreakdown = '';
+        if (traveler.mode === 'multi-modal' && traveler.segments && traveler.segments.length > 1) {
+            const parts = traveler.segments.map(seg => {
+                const icon = seg.type === 'flight' ? '✈️' : '🚄';
+                return `${icon} €${seg.cost}`;
+            });
+            segmentBreakdown = `<div class="route-segment-breakdown">${parts.join(' + ')} = €${traveler.cost}</div>`;
+        }
+
         return `
             <div class="route-card">
                 <div class="route-header">
@@ -531,6 +558,7 @@ class HodophileUI {
                 <div class="route-path">
                     ${this.formatRoutePath(traveler)}
                 </div>
+                ${segmentBreakdown}
                 <div class="route-meta">
                     <span class="route-meta-item">${modeEmoji[traveler.mode] || '🚀'} ${traveler.mode}</span>
                     <span class="route-meta-item">⏱️ ${durationStr}</span>
@@ -542,7 +570,7 @@ class HodophileUI {
                         <div class="segment-buttons">
                             ${traveler.segments.map((seg, idx) => `
                                 <a href="${seg.bookingLink || '#'}" target="_blank" rel="noopener" class="btn btn-ghost btn-xs segment-book-btn">
-                                    ${seg.type === 'flight' ? '✈️' : '🚄'} Book ${seg.type} (${seg.from}→${seg.to})
+                                    ${seg.type === 'flight' ? '✈️' : '🚄'} Book ${seg.type}: ${seg.from}→${seg.to} (€${seg.cost})
                                 </a>
                             `).join('')}
                         </div>
