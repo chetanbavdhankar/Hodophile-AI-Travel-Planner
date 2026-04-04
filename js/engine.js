@@ -190,7 +190,7 @@ class HodophileEngine {
             }
 
             // Apply multi-modal rule (now async — may call real API)
-            const routeOptions = await this.findRoutes(origin, originKey, dest, destKey, distance, traveler, tripDate);
+            const routeOptions = await this.findRoutes(origin, originKey, dest, destKey, distance, traveler, tripDate, returnDate);
 
             // Filter by time constraints, max transfers, max layover
             const feasibleRoutes = routeOptions.filter(r => {
@@ -234,25 +234,34 @@ class HodophileEngine {
 
     // ─── Find Routes (Multi-Modal) ───
     // Now async: attempts real Google Flights price via backend, falls back to simulation.
-    async findRoutes(origin, originKey, dest, destKey, distance, traveler, tripDate) {
+    async findRoutes(origin, originKey, dest, destKey, distance, traveler, tripDate, returnDate) {
         const routes = [];
-        const dateISO = tripDate; // Already YYYY-MM-DD format
+        const dateISO = tripDate;
 
-        // Try real price from backend (fli / Google Flights); null = use simulation
-        const realFlight = await this.fetchRealFlightPrice(
-            origin.airports[0], dest.airports[0], dateISO
-        );
+        // Fetch outbound + return prices in parallel
+        const [realFlight, realReturn] = await Promise.all([
+            this.fetchRealFlightPrice(origin.airports[0], dest.airports[0], dateISO),
+            returnDate
+                ? this.fetchRealFlightPrice(dest.airports[0], origin.airports[0], returnDate)
+                : Promise.resolve(null)
+        ]);
 
         const baseFlightPrice = this.estimateFlightPrice(distance);
         const baseTrainPrice = this.estimateTrainPrice(distance);
 
-        // Direct Flight — use real price when available, else simulated
-        const directFlightCost = realFlight
+        // Outbound cost
+        const outboundCost = realFlight
             ? realFlight.price
             : baseFlightPrice + Math.floor(Math.random() * 40) - 20;
         const directFlightDuration = realFlight
             ? realFlight.duration_minutes
             : Math.round(distance / 700 * 60 + 45);
+        // Return cost
+        const returnCost = realReturn
+            ? realReturn.price
+            : baseFlightPrice + Math.floor(Math.random() * 40) - 20;
+        const directFlightCost = outboundCost + returnCost;
+
         const realAirlineLabel = realFlight ? ` (${realFlight.airline})` : '';
         const priceSource = realFlight ? '🟢 Live' : '⚪ Est.';
         const flightArrival = this.calculateArrival(traveler.departureTime || "08:00", directFlightDuration);
@@ -266,11 +275,13 @@ class HodophileEngine {
             mode: "flight",
             transfers: realFlight ? realFlight.stops : 0,
             priceSource,
+            outboundCost,
+            returnCost,
             segments: [{
                 type: "flight",
                 from: origin.name,
                 to: dest.name,
-                cost: directFlightCost,
+                cost: outboundCost,
                 duration: directFlightDuration,
                 airport: origin.airports[0],
                 bookingLink: this.data.bookingLinks.flight(
@@ -291,14 +302,18 @@ class HodophileEngine {
             const trainDuration = Math.round(distance / 180 * 60 + 20);
             const trainArrival = this.calculateArrival(traveler.departureTime || "08:00", trainDuration);
 
+            const trainReturnCost = returnDate ? baseTrainPrice : 0;
             routes.push({
                 traveler: traveler.name,
                 origin: origin.name,
                 destination: dest.name,
-                route: `${origin.name} → ${dest.name} (🚄 Train)`,
+                route: `${origin.name} → ${dest.name} (🚄 Train) [⚪ Est.]`,
                 routeShort: `${origin.name} → ${dest.name}`,
                 mode: "train",
                 transfers: 0,
+                priceSource: '⚪ Est.',
+                outboundCost: baseTrainPrice,
+                returnCost: trainReturnCost,
                 segments: [{
                     type: "train",
                     from: origin.name,
@@ -309,7 +324,7 @@ class HodophileEngine {
                         origin.name, dest.name, dateISO
                     )
                 }],
-                totalCost: baseTrainPrice,
+                totalCost: baseTrainPrice + trainReturnCost,
                 totalDuration: trainDuration,
                 arrivalTime: trainArrival,
                 feasible: true,
@@ -532,15 +547,19 @@ class HodophileEngine {
                 window: costData.window,
                 travelers: costData.routes.map(r => ({
                     name: r.traveler,
+                    origin: r.origin,
                     route: r.route,
                     routeShort: r.routeShort || r.route,
                     segments: r.segments,
+                    outboundCost: r.outboundCost ?? r.totalCost,
+                    returnCost: r.returnCost ?? null,
                     cost: r.totalCost,
                     duration: r.totalDuration,
                     arrival: r.arrivalTime,
                     mode: r.mode,
                     preferred: r.preferred || false,
                     preferReason: r.preferReason || null,
+                    priceSource: r.priceSource || '⚪ Est.',
                     bookingLink: r.bookingLink
                 })),
                 accommodation: {

@@ -247,7 +247,7 @@ class HodophileUI {
         });
     }
 
-    addCustomDestination() {
+    async addCustomDestination() {
         const cityName = this.el.citySearchInput.value.trim();
         if (!cityName) return;
 
@@ -260,14 +260,13 @@ class HodophileUI {
             }
         }
 
-        // If not, synthesize a virtual city
+        // If not, geocode via Nominatim then synthesize
         if (!cityKey) {
-            const virtualCity = HODOPHILE_DATA.synthesizeCity(cityName);
             cityKey = cityName.toLowerCase().replace(/\s+/g, '_');
+            this.showToast(`🔍 Looking up ${cityName}...`, 'info');
+            const virtualCity = await HODOPHILE_DATA.synthesizeCityAsync(cityName);
             HODOPHILE_DATA.cities[cityKey] = virtualCity;
-
-            // Show toast for feedback
-            this.showToast(`Added custom city: ${virtualCity.name}`, 'info');
+            this.showToast(`Added: ${virtualCity.name} (${virtualCity.country})`, 'info');
         }
 
         // Add to selectedCities if not already there
@@ -408,6 +407,9 @@ class HodophileUI {
                         <span style="font-size: var(--text-xs); opacity: 0.7; margin-left: 4px;">(${top.neighborhoodType})</span>
                     </div>
                     ${top.isPerfectSpot ? '<div class="accommodation-badge" style="margin-top: 8px; display: inline-block;">✨ Perfect Spot</div>' : ''}
+                    <div class="data-source-badge ${this.engine.useRealFlights ? 'live' : 'estimated'}" style="margin-top: 8px; display: inline-block;">
+                        ${this.engine.useRealFlights ? '🟢 Live Google Flights' : '⚪ Estimated Prices'}
+                    </div>
                 </div>
                 <!-- Selected Window Info -->
                 <div class="result-window-info animate-fade-in-up">
@@ -535,15 +537,20 @@ class HodophileUI {
         const durationMins = traveler.duration % 60;
         const durationStr = traveler.duration === 0 ? 'Local' : `${durationHours}h ${durationMins}m`;
 
-        // Build multi-modal price breakdown
+        // Build cost display with return trip breakdown
+        const srcBadge = traveler.priceSource
+            ? `<span class="price-source-tag">${traveler.priceSource}</span>`
+            : '';
         let costDisplay = `€${traveler.cost}`;
         let segmentBreakdown = '';
-        if (traveler.mode === 'multi-modal' && traveler.segments && traveler.segments.length > 1) {
+        if (traveler.returnCost) {
+            segmentBreakdown = `<div class="route-segment-breakdown">✈️ €${traveler.outboundCost} out + ✈️ €${traveler.returnCost} return = €${traveler.cost} round-trip ${srcBadge}</div>`;
+        } else if (traveler.mode === 'multi-modal' && traveler.segments && traveler.segments.length > 1) {
             const parts = traveler.segments.map(seg => {
                 const icon = seg.type === 'flight' ? '✈️' : '🚄';
                 return `${icon} €${seg.cost}`;
             });
-            segmentBreakdown = `<div class="route-segment-breakdown">${parts.join(' + ')} = €${traveler.cost}</div>`;
+            segmentBreakdown = `<div class="route-segment-breakdown">${parts.join(' + ')} = €${traveler.cost} ${srcBadge}</div>`;
         }
 
         return `
@@ -644,7 +651,7 @@ class HodophileUI {
         this.el.tripDateEnd.value = this.formatDate(end);
 
         // Set budget
-        this.el.budgetMax.value = 300;
+        this.el.budgetMax.value = 500;
         this.el.accommodationType.value = 'mid';
         this.el.tripDuration.value = 4;
 

@@ -321,6 +321,27 @@ const HODOPHILE_DATA = {
         };
     },
 
+    // ─── Async City Geocoder (OpenStreetMap Nominatim, free, no key) ───
+    // Falls back to synthesizeCity() if network unavailable or city not found.
+    synthesizeCityAsync: async function (cityName) {
+        try {
+            const resp = await fetch(
+                `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName)}&format=json&limit=1`,
+                { signal: AbortSignal.timeout(5000), headers: { 'Accept-Language': 'en' } }
+            );
+            const data = await resp.json();
+            const city = this.synthesizeCity(cityName);
+            if (data.length > 0) {
+                city.lat = parseFloat(data[0].lat);
+                city.lng = parseFloat(data[0].lon);
+                city.country = data[0].display_name.split(',').pop().trim();
+            }
+            return city;
+        } catch {
+            return this.synthesizeCity(cityName);
+        }
+    },
+
     // ─── Traveler Avatar Colors ───
     avatarColors: [
         "#6366f1", "#06b6d4", "#f59e0b", "#10b981",
