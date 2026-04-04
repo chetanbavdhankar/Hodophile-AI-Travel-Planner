@@ -13,6 +13,46 @@ class HodophileEngine {
     constructor() {
         this.data = window.HODOPHILE_DATA;
         this.listeners = {};
+        // Set to true when the Python backend is running on localhost:8000
+        this.useRealFlights = false;
+        this.backendUrl = 'http://localhost:8000';
+    }
+
+    // ─── Real Flight Price Fetch (fli / Google Flights backend) ───
+    // Returns { price, duration_minutes, airline, stops } or null on failure.
+    // On null the caller falls back to the built-in simulation model.
+    async fetchRealFlightPrice(originCode, destCode, date) {
+        if (!this.useRealFlights) return null;
+        try {
+            const url = `${this.backendUrl}/api/flights?origin=${originCode}&dest=${destCode}&date=${date}`;
+            const resp = await fetch(url, { signal: AbortSignal.timeout(6000) });
+            if (!resp.ok) return null;
+            const data = await resp.json();
+            if (!data.found) return null;
+            return {
+                price: Math.round(data.cheapest_price),
+                duration_minutes: data.cheapest_duration_minutes,
+                airline: data.cheapest_airline,
+                stops: data.cheapest_stops,
+            };
+        } catch {
+            return null; // network error or timeout — use simulation
+        }
+    }
+
+    // ─── Check backend connectivity ───
+    async checkBackend() {
+        try {
+            const resp = await fetch(`${this.backendUrl}/health`, {
+                signal: AbortSignal.timeout(2000),
+            });
+            const data = await resp.json();
+            this.useRealFlights = data.status === 'ok';
+            return this.useRealFlights;
+        } catch {
+            this.useRealFlights = false;
+            return false;
+        }
     }
 
     // ─── Event Emitter ───
@@ -39,6 +79,9 @@ class HodophileEngine {
             return { success: false, errors };
         }
 
+        // Probe backend — enables real prices if available, silently skips if not
+        await this.checkBackend();
+
         // Determine candidate destinations
         const candidates = targetCities.length > 0
             ? targetCities
@@ -60,7 +103,7 @@ class HodophileEngine {
             let minDestCost = Infinity;
 
             for (const win of windows) {
-                const res = this.scoutAgent(travelers, destKey, win.start, win.end);
+                const res = await this.scoutAgent(travelers, destKey, win.start, win.end);
                 if (res && res.allFeasible) {
                     const travelCost = res.routes.reduce((sum, r) => sum + r.totalCost, 0);
                     if (travelCost < minDestCost) {
@@ -113,11 +156,11 @@ class HodophileEngine {
     // AGENT 1: SCOUT AGENT
     // Searches routes for each traveler to each destination
     // ═══════════════════════════════════════════════════════════
-    scoutAgent(travelers, destKey, tripDate, returnDate) {
+    async scoutAgent(travelers, destKey, tripDate, returnDate) {
         const dest = this.data.cities[destKey];
         if (!dest) return null;
 
-        const routes = travelers.map(traveler => {
+        const routes = await Promise.all(travelers.map(async traveler => {
             const originKey = this.findCityKey(traveler.origin);
             if (!originKey) {
                 return {
@@ -146,8 +189,8 @@ class HodophileEngine {
                 };
             }
 
-            // Apply multi-modal rule
-            const routeOptions = this.findRoutes(origin, originKey, dest, destKey, distance, traveler, tripDate);
+            // Apply multi-modal rule (now async — may call real API)
+            const routeOptions = await this.findRoutes(origin, originKey, dest, destKey, distance, traveler, tripDate);
 
             // Filter by time constraints, max transfers, max layover
             const feasibleRoutes = routeOptions.filter(r => {
@@ -179,7 +222,7 @@ class HodophileEngine {
             // Return cheapest feasible route
             feasibleRoutes.sort((a, b) => a.totalCost - b.totalCost);
             return feasibleRoutes[0];
-        });
+        }));
 
         return {
             destination: destKey,
@@ -190,40 +233,52 @@ class HodophileEngine {
     }
 
     // ─── Find Routes (Multi-Modal) ───
-    findRoutes(origin, originKey, dest, destKey, distance, traveler, tripDate) {
+    // Now async: attempts real Google Flights price via backend, falls back to simulation.
+    async findRoutes(origin, originKey, dest, destKey, distance, traveler, tripDate) {
         const routes = [];
         const dateISO = tripDate; // Already YYYY-MM-DD format
 
-        // Generate realistic price based on distance and randomness
+        // Try real price from backend (fli / Google Flights); null = use simulation
+        const realFlight = await this.fetchRealFlightPrice(
+            origin.airports[0], dest.airports[0], dateISO
+        );
+
         const baseFlightPrice = this.estimateFlightPrice(distance);
         const baseTrainPrice = this.estimateTrainPrice(distance);
 
-        // Direct Flight
-        const directFlightCost = baseFlightPrice + Math.floor(Math.random() * 40) - 20;
-        const flightDuration = Math.round(distance / 700 * 60 + 45); // avg speed + ground time
-        const flightArrival = this.calculateArrival(traveler.departureTime || "08:00", flightDuration);
+        // Direct Flight — use real price when available, else simulated
+        const directFlightCost = realFlight
+            ? realFlight.price
+            : baseFlightPrice + Math.floor(Math.random() * 40) - 20;
+        const directFlightDuration = realFlight
+            ? realFlight.duration_minutes
+            : Math.round(distance / 700 * 60 + 45);
+        const realAirlineLabel = realFlight ? ` (${realFlight.airline})` : '';
+        const priceSource = realFlight ? '🟢 Live' : '⚪ Est.';
+        const flightArrival = this.calculateArrival(traveler.departureTime || "08:00", directFlightDuration);
 
         routes.push({
             traveler: traveler.name,
             origin: origin.name,
             destination: dest.name,
-            route: `${origin.name} → ${dest.name} (✈️ Flight)`,
+            route: `${origin.name} → ${dest.name} (✈️ Flight${realAirlineLabel}) [${priceSource}]`,
             routeShort: `${origin.name} → ${dest.name}`,
             mode: "flight",
-            transfers: 0,
+            transfers: realFlight ? realFlight.stops : 0,
+            priceSource,
             segments: [{
                 type: "flight",
                 from: origin.name,
                 to: dest.name,
                 cost: directFlightCost,
-                duration: flightDuration,
+                duration: directFlightDuration,
                 airport: origin.airports[0],
                 bookingLink: this.data.bookingLinks.flight(
                     origin.airports[0], dest.airports[0], dateISO
                 )
             }],
             totalCost: directFlightCost,
-            totalDuration: flightDuration,
+            totalDuration: directFlightDuration,
             arrivalTime: flightArrival,
             feasible: true,
             bookingLink: this.data.bookingLinks.flight(

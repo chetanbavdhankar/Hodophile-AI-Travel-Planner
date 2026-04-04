@@ -1,0 +1,21 @@
+# Hodophile Flight API Backend Dependencies
+# Install with: pip install -r backend/requirements.txt
+
+# fli library (Google Flights wrapper) — PyPI package name is 'flights'
+flights @ git+https://github.com/punitarani/fli.git
+
+# Web framework
+fastapi>=0.115.6
+uvicorn>=0.34.0
+
+# fli runtime dependencies
+babel>=2.17.0
+curl-cffi>=0.7.4
+httpx>=0.28.1
+pydantic>=2.10.4
+python-dotenv>=1.0.1
+tenacity>=9.0.0
+
+# NOTE: 'ratelimit' (required by fli) fails to build from source in some envs.
+# If pip install fails for ratelimit, create a stub:
+#   echo 'def limits(**k): return lambda f: f\ndef sleep_and_retry(f): return f' > ratelimit.py
