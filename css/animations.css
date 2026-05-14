@@ -368,3 +368,30 @@
 .toast.toast-info {
     border-left: 3px solid var(--color-info);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   STAR NETWORK — Interactive Galaxy Background
+   ═══════════════════════════════════════════════════════════════ */
+
+.star-network-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Hero content must sit above the canvas */
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+/* ─── Reduce motion for accessibility ─── */
+@media (prefers-reduced-motion: reduce) {
+    .star-network-canvas {
+        display: none;
+    }
+}

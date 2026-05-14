@@ -10,18 +10,18 @@
     --color-primary-light: #818cf8;
     --color-primary-dark: #4f46e5;
     --color-primary-glow: rgba(99, 102, 241, 0.3);
-    
+
     --color-secondary: #06b6d4;
     --color-secondary-light: #22d3ee;
-    
+
     --color-accent: #f59e0b;
     --color-accent-light: #fbbf24;
-    
+
     --color-success: #10b981;
     --color-warning: #f59e0b;
     --color-error: #ef4444;
     --color-info: #3b82f6;
-    
+
     /* Neutral Palette */
     --color-bg-primary: #0a0f1c;
     --color-bg-secondary: #111827;
@@ -30,29 +30,29 @@
     --color-bg-card-hover: rgba(31, 41, 55, 0.9);
     --color-bg-glass: rgba(255, 255, 255, 0.03);
     --color-bg-glass-hover: rgba(255, 255, 255, 0.06);
-    
+
     --color-text-primary: #f9fafb;
     --color-text-secondary: #9ca3af;
     --color-text-tertiary: #6b7280;
     --color-text-muted: #4b5563;
-    
+
     --color-border: rgba(255, 255, 255, 0.06);
     --color-border-hover: rgba(255, 255, 255, 0.12);
     --color-border-active: rgba(99, 102, 241, 0.4);
-    
+
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, #6366f1, #06b6d4);
     --gradient-warm: linear-gradient(135deg, #f59e0b, #ef4444);
     --gradient-cool: linear-gradient(135deg, #06b6d4, #10b981);
     --gradient-hero: radial-gradient(ellipse at 30% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-                     radial-gradient(ellipse at 70% 50%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+        radial-gradient(ellipse at 70% 50%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
     --gradient-card: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(6, 182, 212, 0.02));
-    
+
     /* Typography */
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-display: 'Space Grotesk', 'Inter', sans-serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-    
+
     --text-xs: 0.75rem;
     --text-sm: 0.875rem;
     --text-base: 1rem;
@@ -64,7 +64,7 @@
     --text-5xl: 3rem;
     --text-6xl: 3.75rem;
     --text-7xl: 4.5rem;
-    
+
     /* Spacing */
     --space-1: 0.25rem;
     --space-2: 0.5rem;
@@ -78,14 +78,14 @@
     --space-16: 4rem;
     --space-20: 5rem;
     --space-24: 6rem;
-    
+
     /* Borders */
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 16px;
     --radius-xl: 24px;
     --radius-full: 9999px;
-    
+
     /* Shadows */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -93,13 +93,13 @@
     --shadow-xl: 0 16px 64px rgba(0, 0, 0, 0.6);
     --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
     --shadow-glow-lg: 0 0 80px rgba(99, 102, 241, 0.2);
-    
+
     /* Transitions */
     --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
-    
+
     /* Z-Index Scale */
     --z-base: 0;
     --z-dropdown: 100;
@@ -158,7 +158,9 @@ button {
     color: inherit;
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
     font-family: inherit;
     font-size: inherit;
 }
@@ -474,7 +476,11 @@ input, select, textarea {
 }
 
 .section-dark {
-    background: var(--color-bg-secondary);
+    background: rgba(17, 24, 39, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .section-header {
@@ -641,7 +647,9 @@ input, select, textarea {
 .footer {
     padding: var(--space-12) 0;
     border-top: 1px solid var(--color-border);
-    background: var(--color-bg-primary);
+    background: rgba(10, 15, 28, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .footer-content {
@@ -699,25 +707,25 @@ input, select, textarea {
     .nav-links {
         display: none;
     }
-    
+
     .hero-stats {
         flex-direction: column;
         gap: var(--space-4);
     }
-    
+
     .stat-divider {
         width: 40px;
         height: 1px;
     }
-    
+
     .hero-cta {
         flex-direction: column;
     }
-    
+
     .planner-layout {
         flex-direction: column;
     }
-    
+
     .agent-grid {
         grid-template-columns: 1fr;
     }

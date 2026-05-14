@@ -536,14 +536,18 @@ class HodophileUI {
         const durationStr = traveler.duration === 0 ? 'Local' : `${durationHours}h ${durationMins}m`;
 
         // Build multi-modal price breakdown
-        let costDisplay = `€${traveler.cost}`;
+        const isEstimated = traveler.priceSource === 'estimated';
+        const costDisplay = isEstimated
+            ? `~€${traveler.cost} <span class="price-estimated" title="Price estimated from distance — start backend for real prices">est.</span>`
+            : `€${traveler.cost}`;
         let segmentBreakdown = '';
         if (traveler.mode === 'multi-modal' && traveler.segments && traveler.segments.length > 1) {
             const parts = traveler.segments.map(seg => {
                 const icon = seg.type === 'flight' ? '✈️' : '🚄';
-                return `${icon} €${seg.cost}`;
+                const estTag = seg.priceSource === 'estimated' ? '<span class="price-estimated">~</span>' : '';
+                return `${icon} ${estTag}€${seg.cost}`;
             });
-            segmentBreakdown = `<div class="route-segment-breakdown">${parts.join(' + ')} = €${traveler.cost}</div>`;
+            segmentBreakdown = `<div class="route-segment-breakdown">${parts.join(' + ')} = ${isEstimated ? '~' : ''}€${traveler.cost}</div>`;
         }
 
         return `
@@ -553,7 +557,7 @@ class HodophileUI {
                         <div class="route-avatar" style="background: ${color}">${traveler.name.charAt(0)}</div>
                         <span class="route-name">${traveler.name}</span>
                     </div>
-                    <span class="route-cost">€${traveler.cost}</span>
+                    <span class="route-cost">${costDisplay}</span>
                 </div>
                 <div class="route-path">
                     ${this.formatRoutePath(traveler)}

@@ -1,0 +1,508 @@
+{
+  "meta": {
+    "url": "https://www.google.com/travel/flights?q=Flights+from+WAW+to+BCN+on+2026-03-21+through+2026-03-25&hl=en&curr=EUR",
+    "route": {
+      "origin": "WAW",
+      "dest": "BCN",
+      "depart": "2026-03-21",
+      "return": "2026-03-25"
+    },
+    "scrape_time_seconds": 18.7,
+    "status": 200,
+    "final_url": "https://www.google.com/travel/flights?q=Flights+from+WAW+to+BCN+on+2026-03-21+through+2026-03-25&hl=en&curr=EUR",
+    "html_bytes": 2507370,
+    "timestamp": "2026-02-28T03:07:21"
+  },
+  "price_elements": [
+    {
+      "strategy": "aria-label",
+      "text": "€115",
+      "aria_label": "115 euros",
+      "extracted_price": 115
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€142",
+      "aria_label": "142 euros",
+      "extracted_price": 142
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€142",
+      "aria_label": "142 euros",
+      "extracted_price": 142
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€142",
+      "aria_label": "142 euros",
+      "extracted_price": 142
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€251",
+      "aria_label": "251 euros",
+      "extracted_price": 251
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€251",
+      "aria_label": "251 euros",
+      "extracted_price": 251
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€251",
+      "aria_label": "251 euros",
+      "extracted_price": 251
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€325",
+      "aria_label": "325 euros",
+      "extracted_price": 325
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€325",
+      "aria_label": "325 euros",
+      "extracted_price": 325
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€325",
+      "aria_label": "325 euros",
+      "extracted_price": 325
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€140",
+      "aria_label": "140 euros",
+      "extracted_price": 140
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€140",
+      "aria_label": "140 euros",
+      "extracted_price": 140
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€140",
+      "aria_label": "140 euros",
+      "extracted_price": 140
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€140",
+      "aria_label": "140 euros",
+      "extracted_price": 140
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€140",
+      "aria_label": "140 euros",
+      "extracted_price": 140
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€140",
+      "aria_label": "140 euros",
+      "extracted_price": 140
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€150",
+      "aria_label": "150 euros",
+      "extracted_price": 150
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€150",
+      "aria_label": "150 euros",
+      "extracted_price": 150
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€150",
+      "aria_label": "150 euros",
+      "extracted_price": 150
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€153",
+      "aria_label": "153 euros",
+      "extracted_price": 153
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€153",
+      "aria_label": "153 euros",
+      "extracted_price": 153
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€153",
+      "aria_label": "153 euros",
+      "extracted_price": 153
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€181",
+      "aria_label": "181 euros",
+      "extracted_price": 181
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€181",
+      "aria_label": "181 euros",
+      "extracted_price": 181
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€181",
+      "aria_label": "181 euros",
+      "extracted_price": 181
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€226",
+      "aria_label": "226 euros",
+      "extracted_price": 226
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€226",
+      "aria_label": "226 euros",
+      "extracted_price": 226
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€226",
+      "aria_label": "226 euros",
+      "extracted_price": 226
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€262",
+      "aria_label": "262 euros",
+      "extracted_price": 262
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€262",
+      "aria_label": "262 euros",
+      "extracted_price": 262
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€262",
+      "aria_label": "262 euros",
+      "extracted_price": 262
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€308",
+      "aria_label": "308 euros",
+      "extracted_price": 308
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€308",
+      "aria_label": "308 euros",
+      "extracted_price": 308
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€308",
+      "aria_label": "308 euros",
+      "extracted_price": 308
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€142",
+      "aria_label": "142 euros",
+      "extracted_price": 142
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€142",
+      "aria_label": "142 euros",
+      "extracted_price": 142
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€142",
+      "aria_label": "142 euros",
+      "extracted_price": 142
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€251",
+      "aria_label": "251 euros",
+      "extracted_price": 251
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€251",
+      "aria_label": "251 euros",
+      "extracted_price": 251
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€251",
+      "aria_label": "251 euros",
+      "extracted_price": 251
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€325",
+      "aria_label": "325 euros",
+      "extracted_price": 325
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€325",
+      "aria_label": "325 euros",
+      "extracted_price": 325
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€325",
+      "aria_label": "325 euros",
+      "extracted_price": 325
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€140",
+      "aria_label": "140 euros",
+      "extracted_price": 140
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€140",
+      "aria_label": "140 euros",
+      "extracted_price": 140
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€140",
+      "aria_label": "140 euros",
+      "extracted_price": 140
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€140",
+      "aria_label": "140 euros",
+      "extracted_price": 140
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€140",
+      "aria_label": "140 euros",
+      "extracted_price": 140
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€140",
+      "aria_label": "140 euros",
+      "extracted_price": 140
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€150",
+      "aria_label": "150 euros",
+      "extracted_price": 150
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€150",
+      "aria_label": "150 euros",
+      "extracted_price": 150
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€150",
+      "aria_label": "150 euros",
+      "extracted_price": 150
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€153",
+      "aria_label": "153 euros",
+      "extracted_price": 153
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€153",
+      "aria_label": "153 euros",
+      "extracted_price": 153
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€153",
+      "aria_label": "153 euros",
+      "extracted_price": 153
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€181",
+      "aria_label": "181 euros",
+      "extracted_price": 181
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€181",
+      "aria_label": "181 euros",
+      "extracted_price": 181
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€181",
+      "aria_label": "181 euros",
+      "extracted_price": 181
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€226",
+      "aria_label": "226 euros",
+      "extracted_price": 226
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€226",
+      "aria_label": "226 euros",
+      "extracted_price": 226
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€226",
+      "aria_label": "226 euros",
+      "extracted_price": 226
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€262",
+      "aria_label": "262 euros",
+      "extracted_price": 262
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€262",
+      "aria_label": "262 euros",
+      "extracted_price": 262
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€262",
+      "aria_label": "262 euros",
+      "extracted_price": 262
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€308",
+      "aria_label": "308 euros",
+      "extracted_price": 308
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€308",
+      "aria_label": "308 euros",
+      "extracted_price": 308
+    },
+    {
+      "strategy": "aria-label",
+      "text": "€308",
+      "aria_label": "308 euros",
+      "extracted_price": 308
+    }
+  ],
+  "euro_regex_prices": [
+    115,
+    142,
+    142,
+    142,
+    251,
+    251,
+    251,
+    325,
+    325,
+    325,
+    140,
+    140,
+    140,
+    140,
+    140,
+    140,
+    150,
+    150,
+    150,
+    153,
+    153,
+    153,
+    181,
+    181,
+    181,
+    226,
+    226,
+    226,
+    262,
+    262,
+    262,
+    308,
+    308,
+    308,
+    142,
+    142,
+    142,
+    251,
+    251,
+    251,
+    325,
+    325,
+    325,
+    140,
+    140,
+    140,
+    140,
+    140,
+    140,
+    150
+  ],
+  "unique_prices_sorted": [
+    115,
+    140,
+    142,
+    150,
+    153,
+    181,
+    226,
+    251,
+    262,
+    308,
+    325
+  ],
+  "cheapest_price": 115,
+  "flight_listings": [
+    "From 142 euros round trip total. 1 stop flight with Lufthansa and Lufthansa City Airlines. Operated by Lufthansa CityLine. Leaves Warsaw Frederic Chopin at 5:15 PM on Saturday, March 21 and arrives at Josep Tarradellas Barcelona-El Prat Airport at 11:05 PM on Saturday, March 21. Total duration 5 hr 50 min. Layover (1 of 1) is a 2 hr 10 min layover at Munich International Airport in Munich. Select flight",
+    "1 stop flight.",
+    "From 251 euros round trip total.This price does not include overhead bin access. Nonstop flight with Wizz Air. Leaves Warsaw Frederic Chopin at 3:05 PM on Saturday, March 21 and arrives at Josep Tarradellas Barcelona-El Prat Airport at 6:15 PM on Saturday, March 21. Total duration 3 hr 10 min.  Select flight",
+    "Nonstop flight.",
+    "From 325 euros round trip total. Nonstop flight with LOT. Leaves Warsaw Frederic Chopin at 7:25 AM on Saturday, March 21 and arrives at Josep Tarradellas Barcelona-El Prat Airport at 10:35 AM on Saturday, March 21. Total duration 3 hr 10 min.  Select flight",
+    "Nonstop flight.",
+    "From 140 euros round trip total. 1 stop flight with Austrian. Leaves Warsaw Frederic Chopin at 10:10 AM on Saturday, March 21 and arrives at Josep Tarradellas Barcelona-El Prat Airport at 7:45 PM on Saturday, March 21. Total duration 9 hr 35 min. Layover (1 of 1) is a 5 hr 55 min layover at Vienna International Airport in Vienna. Select flight",
+    "1 stop flight.",
+    "From 140 euros round trip total. 1 stop flight with Brussels Airlines. Leaves Warsaw Frederic Chopin at 6:30 AM on Saturday, March 21 and arrives at Josep Tarradellas Barcelona-El Prat Airport at 8:25 PM on Saturday, March 21. Total duration 13 hr 55 min. Layover (1 of 1) is a 9 hr 40 min layover at Brussels Airport in Brussels. Select flight",
+    "1 stop flight.",
+    "From 150 euros round trip total. 1 stop flight with Lufthansa. Leaves Warsaw Frederic Chopin at 2:35 PM on Saturday, March 21 and arrives at Josep Tarradellas Barcelona-El Prat Airport at 11:20 PM on Saturday, March 21. Total duration 8 hr 45 min. Layover (1 of 1) is a 4 hr 55 min layover at Frankfurt Airport in Frankfurt am Main. Select flight",
+    "1 stop flight.",
+    "From 153 euros round trip total. 1 stop flight with SWISS. Operated by Helvetic. Leaves Warsaw Frederic Chopin at 9:50 AM on Saturday, March 21 and arrives at Josep Tarradellas Barcelona-El Prat Airport at 7:00 PM on Saturday, March 21. Total duration 9 hr 10 min. Layover (1 of 1) is a 5 hr 20 min layover at Zurich Airport in Zürich. Select flight",
+    "1 stop flight.",
+    "From 181 euros round trip total. 1 stop flight with SWISS. Operated by Helvetic. Leaves Warsaw Frederic Chopin at 9:50 AM on Saturday, March 21 and arrives at Josep Tarradellas Barcelona-El Prat Airport at 11:00 PM on Saturday, March 21. Total duration 13 hr 10 min. Layover (1 of 1) is a 9 hr 15 min layover at Zurich Airport in Zürich. Select flight",
+    "1 stop flight.",
+    "From 226 euros round trip total. 1 stop flight with Lufthansa. Leaves Warsaw Frederic Chopin at 2:35 PM on Saturday, March 21 and arrives at Josep Tarradellas Barcelona-El Prat Airport at 7:50 PM on Saturday, March 21. Total duration 5 hr 15 min. Layover (1 of 1) is a 1 hr 25 min layover at Frankfurt Airport in Frankfurt am Main. Select flight",
+    "1 stop flight.",
+    "From 262 euros round trip total. 1 stop flight with Lufthansa. Operated by Lufthansa CityLine. Leaves Warsaw Frederic Chopin at 6:05 AM on Saturday, March 21 and arrives at Josep Tarradellas Barcelona-El Prat Airport at 11:05 AM on Saturday, March 21. Total duration 5 hr. Layover (1 of 1) is a 1 hr 20 min layover at Munich International Airport in Munich. Select flight",
+    "1 stop flight."
+  ]
+}

@@ -1,18 +1,24 @@
 /* ═══════════════════════════════════════════════════════════════
    HODOPHILE — Optimization Engine
    Multi-origin, multi-modal travel cost optimization
-   
+
    Agent Architecture:
    1. Scout Agent (per traveler) — Finds routes to each destination
-   2. Matchmaker Agent — Finds overlapping date/city/cost combos
+   2. Matchmaker Agent — Finds overlapping date/cost combos
    3. Neighborhood Scout — Scores neighborhoods by preferences
    4. Route Optimizer — Applies multi-modal rules and gateway logic
+
+   Requires hodophile-server running on localhost:3747 for real prices.
+   Falls back to distance-based estimates when backend is unavailable.
    ═══════════════════════════════════════════════════════════════ */
 
 class HodophileEngine {
-    constructor() {
+    constructor(options = {}) {
         this.data = window.HODOPHILE_DATA;
         this.listeners = {};
+        this.backendUrl = options.backendUrl ?? 'http://localhost:3747';
+        // key: "ORIGIN-DEST-DEPART-RETURN" → price (number)
+        this.priceCache = new Map();
     }
 
     // ─── Event Emitter ───
@@ -49,13 +55,54 @@ class HodophileEngine {
         const nights = duration;
 
         // ── STAGE 1: Scout Agents ──
+        // Pre-fetch real prices for every unique (origin → dest) pair before the
+        // scout loop runs. fetchFlightPrices() populates this.priceCache so that
+        // findRoutes() can do synchronous lookups. Falls back to formula on error.
+        this.priceCache.clear();
+        const winStart   = windows[0].start;
+        const winEnd     = windows[windows.length - 1].end;
+        const minNights  = duration;
+        const maxNights  = duration + 2;
+        const prefetchSeen = new Set();
+        const prefetchJobs = [];
+
+        for (const destKey of candidates) {
+            const dest = this.data.cities[destKey];
+            if (!dest) continue;
+            for (const traveler of travelers) {
+                const originKey = this.findCityKey(traveler.origin);
+                if (!originKey) continue;
+                const origin     = this.data.cities[originKey];
+                const originCode = origin.airports?.[0];
+                const destCode   = dest.airports?.[0];
+                const pairKey    = `${originCode}-${destCode}`;
+                if (!originCode || !destCode || prefetchSeen.has(pairKey)) continue;
+                prefetchSeen.add(pairKey);
+                prefetchJobs.push(
+                    this.fetchFlightPrices(originCode, destCode, winStart, winEnd, minNights, maxNights)
+                );
+                // Also pre-fetch gateway airport routes
+                const gateways = this.data.gatewayAirports?.[destKey] || [];
+                for (const gw of gateways) {
+                    const gwKey = `${originCode}-${gw.airport}`;
+                    if (!prefetchSeen.has(gwKey)) {
+                        prefetchSeen.add(gwKey);
+                        prefetchJobs.push(
+                            this.fetchFlightPrices(originCode, gw.airport, winStart, winEnd, minNights, maxNights)
+                        );
+                    }
+                }
+            }
+        }
+
         this.emit('stage', { stage: 'scout', status: 'active' });
-        await this.simulateDelay(800);
+        // Kick off all scraping in parallel; don't let a single failure block the rest.
+        await Promise.allSettled(prefetchJobs);
+        // Only pad with an artificial delay if the backend was offline (no cache populated).
+        if (this.priceCache.size === 0) await this.simulateDelay(800);
 
         const scoutResults = {};
         for (const destKey of candidates) {
-            // Optimization: For each destination, we want to find the BEST window.
-            // In a real app we'd search APIs for all windows, here we simulate finding the best one.
             let bestDestResult = null;
             let minDestCost = Infinity;
 
@@ -147,7 +194,7 @@ class HodophileEngine {
             }
 
             // Apply multi-modal rule
-            const routeOptions = this.findRoutes(origin, originKey, dest, destKey, distance, traveler, tripDate);
+            const routeOptions = this.findRoutes(origin, originKey, dest, destKey, distance, traveler, tripDate, returnDate);
 
             // Filter by time constraints, max transfers, max layover
             const feasibleRoutes = routeOptions.filter(r => {
@@ -190,16 +237,25 @@ class HodophileEngine {
     }
 
     // ─── Find Routes (Multi-Modal) ───
-    findRoutes(origin, originKey, dest, destKey, distance, traveler, tripDate) {
+    findRoutes(origin, originKey, dest, destKey, distance, traveler, tripDate, returnDate) {
         const routes = [];
-        const dateISO = tripDate; // Already YYYY-MM-DD format
+        const dateISO = tripDate;
 
-        // Generate realistic price based on distance and randomness
-        const baseFlightPrice = this.estimateFlightPrice(distance);
-        const baseTrainPrice = this.estimateTrainPrice(distance);
+        const originCode = origin.airports?.[0];
+        const destCode   = dest.airports?.[0];
 
-        // Direct Flight
-        const directFlightCost = baseFlightPrice + Math.floor(Math.random() * 40) - 20;
+        // Real price from pre-fetched cache; formula is the offline fallback.
+        const realFlightPrice = (originCode && destCode && returnDate)
+            ? this.lookupPrice(originCode, destCode, tripDate, returnDate)
+            : null;
+        const isFlightEstimated = realFlightPrice === null;
+        const baseFlightPrice   = realFlightPrice ?? this.estimateFlightPrice(distance);
+        const baseTrainPrice    = this.estimateTrainPrice(distance);
+
+        // Direct Flight — no variance on real prices, ±€20 only on estimates
+        const directFlightCost = isFlightEstimated
+            ? baseFlightPrice + Math.floor(Math.random() * 40) - 20
+            : baseFlightPrice;
         const flightDuration = Math.round(distance / 700 * 60 + 45); // avg speed + ground time
         const flightArrival = this.calculateArrival(traveler.departureTime || "08:00", flightDuration);
 
@@ -211,24 +267,24 @@ class HodophileEngine {
             routeShort: `${origin.name} → ${dest.name}`,
             mode: "flight",
             transfers: 0,
+            priceSource: isFlightEstimated ? 'estimated' : 'scraped',
             segments: [{
                 type: "flight",
                 from: origin.name,
                 to: dest.name,
                 cost: directFlightCost,
                 duration: flightDuration,
-                airport: origin.airports[0],
+                airport: originCode,
+                priceSource: isFlightEstimated ? 'estimated' : 'scraped',
                 bookingLink: this.data.bookingLinks.flight(
-                    origin.airports[0], dest.airports[0], dateISO
+                    originCode, destCode, dateISO
                 )
             }],
             totalCost: directFlightCost,
             totalDuration: flightDuration,
             arrivalTime: flightArrival,
             feasible: true,
-            bookingLink: this.data.bookingLinks.flight(
-                origin.airports[0], dest.airports[0], dateISO
-            )
+            bookingLink: this.data.bookingLinks.flight(originCode, destCode, dateISO)
         });
 
         // Train (if distance < 1000km)
@@ -267,7 +323,12 @@ class HodophileEngine {
         // Gateway Airports (Secondary Search)
         const gateways = this.data.gatewayAirports[destKey] || [];
         for (const gw of gateways) {
-            const gwFlightCost = Math.round(baseFlightPrice * 0.65) + Math.floor(Math.random() * 20);
+            const realGwPrice = (originCode && returnDate)
+                ? this.lookupPrice(originCode, gw.airport, tripDate, returnDate)
+                : null;
+            const isGwEstimated = realGwPrice === null;
+            const gwFlightCost  = realGwPrice
+                ?? Math.round(baseFlightPrice * 0.65) + Math.floor(Math.random() * 20);
             const gwFlightDuration = Math.round(distance / 700 * 60 + 30);
             const totalGWCost = gwFlightCost + gw.trainCost;
             const totalGWDuration = gwFlightDuration + gw.trainTime;
@@ -281,6 +342,7 @@ class HodophileEngine {
                 routeShort: `${origin.name} → ${gw.city} → ${dest.name}`,
                 mode: "multi-modal",
                 transfers: 1,
+                priceSource: isGwEstimated ? 'estimated' : 'scraped',
                 segments: [
                     {
                         type: "flight",
@@ -289,9 +351,8 @@ class HodophileEngine {
                         cost: gwFlightCost,
                         duration: gwFlightDuration,
                         airport: gw.airport,
-                        bookingLink: this.data.bookingLinks.flight(
-                            origin.airports[0], gw.airport, dateISO
-                        )
+                        priceSource: isGwEstimated ? 'estimated' : 'scraped',
+                        bookingLink: this.data.bookingLinks.flight(originCode, gw.airport, dateISO)
                     },
                     {
                         type: "train",
@@ -299,18 +360,15 @@ class HodophileEngine {
                         to: dest.name,
                         cost: gw.trainCost,
                         duration: gw.trainTime,
-                        bookingLink: this.data.bookingLinks.train(
-                            gw.city, dest.name, dateISO
-                        )
+                        priceSource: 'estimated',
+                        bookingLink: this.data.bookingLinks.train(gw.city, dest.name, dateISO)
                     }
                 ],
                 totalCost: totalGWCost,
                 totalDuration: totalGWDuration,
                 arrivalTime: gwArrival,
                 feasible: true,
-                bookingLink: this.data.bookingLinks.flight(
-                    origin.airports[0], gw.airport, dateISO
-                )
+                bookingLink: this.data.bookingLinks.flight(originCode, gw.airport, dateISO)
             });
         }
 
@@ -694,6 +752,40 @@ class HodophileEngine {
 
     simulateDelay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Fetch real flight prices from the scraper backend for a date window.
+    // Populates this.priceCache. Returns null when backend is unreachable.
+    async fetchFlightPrices(originCode, destCode, windowStart, windowEnd, minNights, maxNights) {
+        if (!originCode || !destCode) return null;
+        const url = `${this.backendUrl}/search`
+            + `?origin=${encodeURIComponent(originCode)}`
+            + `&dest=${encodeURIComponent(destCode)}`
+            + `&windowStart=${windowStart}`
+            + `&windowEnd=${windowEnd}`
+            + `&minNights=${minNights}`
+            + `&maxNights=${maxNights}`;
+        try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 30000);
+            const res = await fetch(url, { signal: controller.signal });
+            clearTimeout(timer);
+            if (!res.ok) return null;
+            const combos = await res.json();
+            for (const c of combos) {
+                const key = `${originCode}-${destCode}-${c.depart}-${c.return}`;
+                this.priceCache.set(key, c.price);
+            }
+            return combos;
+        } catch {
+            return null;
+        }
+    }
+
+    // Look up a previously fetched price. Returns null on cache miss (use formula fallback).
+    lookupPrice(originCode, destCode, depart, returnDate) {
+        const key = `${originCode}-${destCode}-${depart}-${returnDate}`;
+        return this.priceCache.has(key) ? this.priceCache.get(key) : null;
     }
 
     // ─── Generate JSON Output (as per spec) ───

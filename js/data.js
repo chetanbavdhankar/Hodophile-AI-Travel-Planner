@@ -381,10 +381,13 @@ const HODOPHILE_DATA = {
     bookingLinks: {
         flight: (originCode, destCode, dateISO) =>
             `https://www.skyscanner.net/transport/flights/${originCode.toLowerCase()}/${destCode.toLowerCase()}/${dateISO.replace(/-/g, '').slice(2)}/`,
-        train: (originCity, destCity, dateISO) =>
-            `https://www.thetrainline.com/book/results?origin=${encodeURIComponent(originCity)}&destination=${encodeURIComponent(destCity)}&outwardDate=${dateISO}T00%3A00%3A00&outwardDateType=departAfter&journeySearchType=single`,
+        train: (originCity, destCity) => {
+            const originSlug = originCity.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            const destSlug = destCity.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            return `https://www.thetrainline.com/en/train-times/${originSlug}-to-${destSlug}`;
+        },
         accommodation: (city, checkin, checkout, opts = {}) => {
-            let url = `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(city)}&checkin=${checkin}&checkout=${checkout}`;
+            let url = `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(city)}&checkin=${checkin}&checkout=${checkout}&order=price`;
             if (opts.reviewScore) url += `&review_score=${opts.reviewScore * 10}`;
             if (opts.priceLimit) url += `&nflt=price%3DEUR-min-${opts.priceLimit}-1`;
             return url;
